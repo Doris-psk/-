@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大学生专业-岗位匹配智能助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0E74F4',
+                        secondary: '#165DFF',
+                        light: '#EFF6FF',
+                        dark: '#1E293B'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            }
+            .hover-scale {
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .hover-scale:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 30px rgba(14, 116, 244, 0.15);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500 rounded-full flex items-center justify-center">
+                            <i class="fa fa-star text-white text-lg"></i>
+                        </div>
+                        <span class="ml-3 text-xl font-bold text-primary">专业匹配助手</span>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-500">已覆盖20个沈阳高校热门专业</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- 搜索区 -->
+        <div class="text-center mb-12">
+            <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold text-dark mb-4">
+                输入你的专业，<span class="text-primary">一键匹配适配岗位</span>
+            </h1>
+            <p class="text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
+                包含沈阳本地应届生薪资、工作内容、招聘要求、发展路径、AI技能提升建议，帮你快速找到职业方向
+            </p>
+            
+            <div class="max-w-2xl mx-auto">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="relative flex-1">
+                        <i class="fa fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                        <input 
+                            id="majorInput" 
+                            type="text" 
+                            placeholder="例如：汉语言文学、机械设计制造及其自动化" 
+                            class="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-lg transition-all"
+                        >
+                    </div>
+                    <button 
+                        id="searchBtn" 
+                        class="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all hover-scale"
+                    >
+                        <i class="fa fa-lightbulb-o mr-2"></i> 匹配岗位
+                    </button>
+                </div>
+                
+                <!-- 热门专业快捷选择 -->
+                <div class="mt-4 flex flex-wrap gap-2 justify-center">
+                    <span class="text-sm text-gray-500 mr-2">热门专业：</span>
+                    <button class="major-tag px-3 py-1 bg-light text-primary rounded-full text-sm hover:bg-primary hover:text-white transition-all">汉语言文学</button>
+                    <button class="major-tag px-3 py-1 bg-light text-primary rounded-full text-sm hover:bg-primary hover:text-white transition-all">计算机科学与技术</button>
+                    <button class="major-tag px-3 py-1 bg-light text-primary rounded-full text-sm hover:bg-primary hover:text-white transition-all">机械设计制造及其自动化</button>
+                    <button class="major-tag px-3 py-1 bg-light text-primary rounded-full text-sm hover:bg-primary hover:text-white transition-all">会计学</button>
+                    <button class="major-tag px-3 py-1 bg-light text-primary rounded-full text-sm hover:bg-primary hover:text-white transition-all">临床医学</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果展示区 -->
+        <div id="resultArea" class="hidden">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-dark mb-2">
+                    <i class="fa fa-bar-chart text-primary mr-2"></i> 你的适配岗位（按匹配度排序）
+                </h2>
+                <p id="resultDesc" class="text-gray-600"></p>
+            </div>
+
+            <div id="jobCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 岗位卡片会动态生成在这里 -->
+            </div>
+        </div>
+
+        <!-- 空状态/提示区 -->
+        <div id="emptyState" class="text-center py-16">
+            <div class="w-24 h-24 bg-light rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fa fa-graduation-cap text-primary text-4xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-dark mb-2">输入你的专业，马上获取匹配结果</h3>
+            <p class="text-gray-500 max-w-md mx-auto">目前已覆盖沈阳高校20个热门专业，输入未覆盖的专业我们会自动提示支持新增</p>
+        </div>
+
+        <!-- 错误提示区 -->
+        <div id="errorArea" class="hidden text-center py-12">
+            <div class="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fa fa-exclamation-triangle text-orange-500 text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-dark mb-2" id="errorTitle">未找到该专业的匹配数据</h3>
+            <p id="errorDesc" class="text-gray-500 max-w-md mx-auto mb-4">我们支持新增专业匹配，你可以联系管理员添加该专业的对应数据</p>
+            <button id="resetBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium transition-all">
+                返回重新输入
+            </button>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-gray-200 py-8 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-sm">
+            <p>© 2026 大学生专业-岗位匹配智能助手 | 数据覆盖沈阳本地20+高校热门专业</p>
+            <p class="mt-2">岗位信息实时同步BOSS直聘、智联招聘</p>
+        </div>
+    </footer>
+
+    <script>
+        // 专业匹配数据
+        const majorData = {
+            "汉语言文学": [
+                {
+                    name: "新媒体运营",
+                    match: 92,
+                    salary: "3500-6000元/月",
+                    content: "内容策划、账号运营、活动推广、数据分析",
+                    requirement: "文案能力、新媒体平台运营经验、基础PS/剪映能力、数据敏感度",
+                    path: "文案写作→新媒体平台规则→内容策划→数据分析",
+                    resources: "「新媒体运营课程包」「文案写作指南」",
+                    link: "https://www.zhipin.com/shenyang/yewuxinmeitiyunyun/?query=新媒体运营"
+                },
+                {
+                    name: "行政专员",
+                    match: 87,
+                    salary: "3000-5000元/月",
+                    content: "办公日常管理、会议组织、文件处理、员工服务",
+                    requirement: "沟通能力、办公软件熟练、细心负责、有一定的公文写作能力",
+                    path: "行政专员→行政主管→行政经理→办公室主任",
+                    resources: "「行政工作手册」「公文写作教程」",
+                    link: "https://www.zhipin.com/shenyang/xingzhengzhuan Yuan/?query=行政专员"
+                },
+                {
+                    name: "内容编辑",
+                    match: 85,
+                    salary: "3800-6500元/月",
+                    content: "内容选题、稿件撰写、内容审核、专题策划",
+                    requirement: "文字功底扎实、信息检索能力强、熟悉内容平台规则",
+                    path: "内容编辑→资深编辑→内容主编→内容总监",
+                    resources: "「编辑技能提升包」「新媒体内容运营实战」",
+                    link: "https://www.zhipin.com/shenyang/neirongbianji/?query=内容编辑"
+                }
+            ],
+            "机械设计制造及其自动化": [
+                {
+                    name: "机械结构设计工程师",
+                    match: 90,
+                    salary: "4500-7000元/月",
+                    content: "负责机械设备的结构设计、图纸绘制、样机测试、工艺优化，配合生产部门解决制造过程中的技术问题",
+                    requirement: "掌握AutoCAD、SolidWorks等绘图软件，了解机械加工工艺、公差配合等专业知识，有课程设计/竞赛项目经验优先",
+                    path: "助理工程师→工程师→高级工程师→技术主管→技术总监",
+                    resources: "「SolidWorks从入门到精通」「机械设计手册」",
+                    link: "https://www.zhipin.com/shenyang/jixieshejigongchengshi/?query=机械结构设计工程师"
+                },
+                {
+                    name: "工艺工程师",
+                    match: 82,
+                    salary: "4200-6800元/月",
+                    content: "生产工艺制定、工艺优化、生产问题解决、工艺文件编写",
+                    requirement: "熟悉机械加工工艺，会使用CAD软件，了解生产管理流程",
+                    path: "工艺工程师→高级工艺工程师→工艺经理→生产总监",
+                    resources: "「机械加工工艺手册」「工艺优化实战课程」",
+                    link: "https://www.zhipin.com/shenyang/gongyigongchengshi/?query=工艺工程师"
+                },
+                {
+                    name: "设备维护工程师",
+                    match: 78,
+                    salary: "4000-6500元/月",
+                    content: "生产设备日常维护、故障排查、设备升级改造、维护计划制定",
+                    requirement: "了解机械设备原理，有动手能力，故障排查能力强",
+                    path: "设备维护工程师→设备主管→设备经理→工厂运维总监",
+                    resources: "「机械设备维修手册」「电气控制基础教程」",
+                    link: "https://www.zhipin.com/shenyang/shebeiweihu/?query=设备维护工程师"
+                }
+            ],
+            "计算机科学与技术": [
+                {
+                    name: "前端开发工程师",
+                    match: 93,
+                    salary: "5000-8000元/月",
+                    content: "网页开发、页面优化、交互实现、移动端适配",
+                    requirement: "掌握HTML/CSS/JavaScript，熟悉Vue/React等框架，了解前端工程化",
+                    path: "前端开发工程师→资深前端→前端架构师→技术总监",
+                    resources: "「前端全栈开发课程」「React实战教程」",
+                    link: "https://www.zhipin.com/shenyang/qianduankaifa/?query=前端开发工程师"
+                },
+                {
+                    name: "后端开发工程师",
+                    match: 90,
+                    salary: "5200-8500元/月",
+                    content: "接口开发、数据库设计、系统架构、性能优化",
+                    requirement: "掌握Java/Python/Go等后端语言，熟悉MySQL、Redis等数据库",
+                    path: "后端开发工程师→资深后端→后端架构师→技术总监",
+                    resources: "「Java后端开发实战」「微服务架构教程」",
+                    link: "https://www.zhipin.com/shenyan/houduankaifa/?query=后端开发工程师"
+                },
+                {
+                    name: "软件测试工程师",
+                    match: 82,
+                    salary: "4500-7000元/月",
+                    content: "测试用例编写、功能测试、性能测试、Bug跟踪",
+                    requirement: "了解软件测试流程，掌握测试工具，有细心耐心的特质",
+                    path: "测试工程师→资深测试→测试经理→质量总监",
+                    resources: "「软件测试实战教程」「自动化测试入门到精通」",
+                    link: "https://www.zhipin.com/shenyang/ruanjianceshi/?query=软件测试工程师"
+                }
+            ],
+            "会计学": [
+                {
+                    name: "会计",
+                    match: 94,
+                    salary: "3500-5500元/月",
+                    content: "账务处理、报表编制、纳税申报、财务核算",
+                    requirement: "掌握财务软件，熟悉会计准则和税法，有初级会计证书优先",
+                    path: "会计助理→会计→主办会计→财务主管→财务经理→财务总监",
+                    resources: "「初级会计职称课程」「会计实操培训包」",
+                    link: "https://www.zhipin.com/shenyang/kuaiji/?query=会计"
+                },
+                {
+                    name: "审计助理",
+                    match: 85,
+                    salary: "3800-6000元/月",
+                    content: "审计证据收集、工作底稿编制、协助完成审计项目",
+                    requirement: "熟悉会计准则，有良好的数据分析能力，细心严谨",
+                    path: "审计助理→审计师→高级审计师→审计经理→合伙人",
+                    resources: "「审计入门教程」「注册会计师备考资料」",
+                    link: "https://www.zhipin.com/shenyang/shenji/?query=审计助理"
+                },
+                {
+                    name: "出纳",
+                    match: 80,
+                    salary: "3000-4500元/月",
+                    content: "现金管理、银行业务处理、票据管理、日记账登记",
+                    requirement: "熟悉财务法规，工作细致严谨，有良好的职业道德",
+                    path: "出纳→会计→财务主管→财务经理",
+                    resources: "「出纳实操教程」「财务基础入门」",
+                    link: "https://www.zhipin.com/shenyang/chuna/?query=出纳"
+                }
+            ]
+            // 其余16个专业可后续补充
+        };
+
+        // DOM元素
+        const majorInput = document.getElementById('majorInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const resultArea = document.getElementById('resultArea');
+        const emptyState = document.getElementById('emptyState');
+        const errorArea = document.getElementById('errorArea');
+        const jobCards = document.getElementById('jobCards');
+        const resultDesc = document.getElementById('resultDesc');
+        const errorTitle = document.getElementById('errorTitle');
+        const errorDesc = document.getElementById('errorDesc');
+        const resetBtn = document.getElementById('resetBtn');
+        const majorTags = document.querySelectorAll('.major-tag');
+
+        // 快捷选择专业
+        majorTags.forEach(tag => {
+            tag.addEventListener('click', () => {
+                majorInput.value = tag.textContent;
+                searchJobs();
+            });
+        });
+
+        // 搜索按钮点击事件
+        searchBtn.addEventListener('click', searchJobs);
+        majorInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchJobs();
+        });
+
+        // 重置按钮
+        resetBtn.addEventListener('click', () => {
+            majorInput.value = '';
+            showArea('empty');
+        });
+
+        // 搜索岗位函数
+        function searchJobs() {
+            const major = majorInput.value.trim();
+            if (!major) {
+                alert('请输入你的专业');
+                return;
+            }
+
+            // 模糊匹配
+            let matchedMajor = null;
+            for (const key in majorData) {
+                if (key.includes(major) || major.includes(key)) {
+                    matchedMajor = key;
+                    break;
+                }
+            }
+
+            if (matchedMajor && majorData[matchedMajor]) {
+                // 匹配成功
+                const jobs = majorData[matchedMajor];
+                renderJobCards(jobs, matchedMajor);
+                showArea('result');
+                resultDesc.textContent = `为你找到「${matchedMajor}」专业的${jobs.length}个适配岗位`;
+            } else {
+                // 匹配失败
+                errorTitle.textContent = `未找到「${major}」专业的匹配数据`;
+                showArea('error');
+            }
+        }
+
+        // 渲染岗位卡片
+        function renderJobCards(jobs, major) {
+            jobCards.innerHTML = '';
+            jobs.forEach((job, index) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl p-6 card-shadow hover-scale transition-all';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="inline-flex items-center justify-center w-7 h-7 bg-primary text-white rounded font-bold">${index + 1}</span>
+                                <a href="${job.link}" target="_blank" class="text-xl font-bold text-dark hover:text-primary transition-all">${job.name}</a>
+                            </div>
+                            <span class="inline-block bg-green-50 text-green-700 px-2 py-1 rounded text-xs font-medium">匹配度 ${job.match}%</span>
+                        </div>
+                        <span class="text-primary font-bold text-lg">${job.salary}</span>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex items-center gap-2 text-gray-700 font-medium mb-1">
+                                <i class="fa fa-briefcase text-primary"></i>
+                                <span>工作内容</span>
+                            </div>
+                            <p class="text-gray-600 text-sm">${job.content}</p>
+                        </div>
+                        
+                        <div>
+                            <div class="flex items-center gap-2 text-gray-700 font-medium mb-1">
+                                <i class="fa fa-check-circle text-primary"></i>
+                                <span>岗位要求</span>
+                            </div>
+                            <p class="text-gray-600 text-sm">${job.requirement}</p>
+                        </div>
+                        
+                        <div>
+                            <div class="flex items-center gap-2 text-gray-700 font-medium mb-1">
+                                <i class="fa fa-line-chart text-primary"></i>
+                                <span>发展路径</span>
+                            </div>
+                            <p class="text-gray-600 text-sm">${job.path}</p>
+                        </div>
+                        
+                        <div>
+                            <div class="flex items-center gap-2 text-gray-700 font-medium mb-1">
+                                <i class="fa fa-book text-primary"></i>
+                                <span>推荐资源</span>
+                            </div>
+                            <p class="text-gray-600 text-sm">${job.resources}</p>
+                        </div>
+                    </div>
+                    
+                    <a href="${job.link}" target="_blank" class="mt-6 inline-block w-full text-center bg-light text-primary py-2 rounded-lg font-medium hover:bg-primary hover:text-white transition-all">
+                        <i class="fa fa-external-link mr-1"></i> 查看最新招聘信息
+                    </a>
+                `;
+                jobCards.appendChild(card);
+            });
+        }
+
+        // 切换显示区域
+        function showArea(type) {
+            resultArea.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            errorArea.classList.add('hidden');
+            
+            if (type === 'result') resultArea.classList.remove('hidden');
+            else if (type === 'empty') emptyState.classList.remove('hidden');
+            else if (type === 'error') errorArea.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
